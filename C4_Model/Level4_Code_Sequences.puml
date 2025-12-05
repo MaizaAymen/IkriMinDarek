@@ -1,0 +1,188 @@
+@startuml C4_Level4_Code_AuthFlow
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 9
+skinparam sequence {
+    ActorBackgroundColor #0066CC
+    ActorBorderColor #0066CC
+    ParticipantBackgroundColor #87CEEB
+    ParticipantBorderColor #0066CC
+}
+
+participant "LoginScreen" as LoginScreen
+participant "authAPI" as AuthAPI
+participant "LoginRoute" as LoginRoute
+participant "AuthService" as AuthService
+participant "UserModel" as UserModel
+participant "PostgreSQL" as DB
+participant "Bcrypt" as Bcrypt
+participant "JWT" as JWT
+participant "AuthContext" as AuthContext
+participant "SecureStore" as SecureStore
+
+LoginScreen -> AuthAPI: login(email, password)
+AuthAPI -> LoginRoute: POST /api/auth/login
+LoginRoute -> AuthService: authenticateUser(email, password)
+AuthService -> UserModel: findByEmail(email)
+UserModel -> DB: SELECT * FROM users WHERE email
+DB -> UserModel: Return user record
+UserModel -> AuthService: User object
+AuthService -> Bcrypt: comparePassword(input, hash)
+Bcrypt -> AuthService: true/false
+
+alt Password Valid
+    AuthService -> JWT: generateJWT(userId)
+    JWT -> AuthService: token
+    AuthService -> LoginRoute: token, user
+    LoginRoute -> AuthAPI: Response 200
+    AuthAPI -> AuthContext: setUser(user)
+    AuthAPI -> AuthContext: setToken(token)
+    AuthContext -> SecureStore: saveToken(token)
+    SecureStore -> LoginScreen: Navigate to MainApp
+else Password Invalid
+    AuthService -> LoginRoute: Error 401
+    LoginRoute -> AuthAPI: Response 401
+    AuthAPI -> LoginScreen: Show error message
+end
+
+@enduml
+
+@startuml C4_Level4_Code_BookingFlow
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 9
+
+participant "BookingForm" as BookingForm
+participant "bookingsAPI" as BookingsAPI
+participant "BookingRoute" as BookingRoute
+participant "BookingService" as BookingService
+participant "DateValidator" as DateValidator
+participant "AvailCheck" as AvailCheck
+participant "BookingModel" as BookingModel
+participant "PostgreSQL" as DB
+participant "SocketIO" as SocketIO
+participant "BookingContext" as BookingContext
+participant "Screen" as Screen
+
+BookingForm -> BookingsAPI: create(bookingData)
+BookingsAPI -> BookingRoute: POST /api/bookings
+BookingRoute -> BookingService: createBooking(data)
+BookingService -> DateValidator: validateBookingDates()
+DateValidator -> BookingService: Valid/Invalid
+
+alt Dates Invalid
+    BookingService -> BookingRoute: Error 400
+    BookingRoute -> BookingsAPI: Response 400
+    BookingsAPI -> BookingForm: Show validation error
+else Dates Valid
+    BookingService -> AvailCheck: checkAvailability(propId, dates)
+    AvailCheck -> BookingModel: query(where: dates)
+    BookingModel -> DB: SELECT * FROM bookings WHERE
+    DB -> BookingModel: Booking records
+    BookingModel -> AvailCheck: Available/Not available
+    alt Property Not Available
+        AvailCheck -> BookingService: Error
+        BookingService -> BookingRoute: Error 409
+        BookingRoute -> BookingsAPI: Response 409
+        BookingsAPI -> BookingForm: Show conflict message
+    else Property Available
+        BookingService -> BookingModel: create(bookingData)
+        BookingModel -> DB: INSERT INTO bookings
+        DB -> BookingModel: Created record
+        BookingModel -> BookingService: Booking object
+        BookingService -> SocketIO: emit booking_created
+        SocketIO -> BookingContext: Update bookings
+        BookingService -> BookingRoute: Success response
+        BookingRoute -> BookingsAPI: Response 201
+        BookingsAPI -> BookingContext: setBookings(updated)
+        BookingContext -> Screen: Re-render with new booking
+        Screen -> BookingForm: Show success
+    end
+end
+
+@enduml
+
+@startuml C4_Level4_Code_SearchFlow
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 9
+
+participant "SearchFilter" as SearchFilter
+participant "PropertiesAPI" as PropertiesAPI
+participant "SearchRoute" as SearchRoute
+participant "SearchService" as SearchService
+participant "FilterService" as FilterService
+participant "PropertyModel" as PropertyModel
+participant "PostgreSQL" as DB
+participant "PropertyContext" as PropertyContext
+participant "Screen" as Screen
+
+SearchFilter -> PropertiesAPI: search(filters)
+note over PropertiesAPI: filters: price, location, type, bedrooms
+
+PropertiesAPI -> SearchRoute: GET /api/properties/search
+SearchRoute -> SearchService: searchProperties(filters)
+SearchService -> FilterService: advancedFilter(filters)
+FilterService -> PropertyModel: findAll(where: buildQuery)
+
+note over PropertyModel: Build WHERE clause for price,\nlocation, type, bedrooms
+
+PropertyModel -> DB: SELECT * FROM properties WHERE
+DB -> PropertyModel: Property records
+
+PropertyModel -> FilterService: Array of properties
+FilterService -> SearchService: Filtered results
+SearchService -> SearchRoute: Response 200
+SearchRoute -> PropertiesAPI: JSON array
+
+PropertiesAPI -> PropertyContext: setSearchResults(data)
+PropertyContext -> Screen: Re-render
+Screen -> SearchFilter: Display filtered list
+
+@enduml
+
+@startuml C4_Level4_Code_ChatFlow
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 9
+
+participant "ChatScreen" as ChatScreen
+participant "ClientSocket" as ClientSocket
+participant "ServerSocket" as ServerSocket
+participant "MessageService" as MessageService
+participant "MessageModel" as MessageModel
+participant "PostgreSQL" as DB
+participant "Emitter" as Emitter
+participant "ChatContext" as ChatContext
+participant "ReceiverScreen" as ReceiverScreen
+
+ChatScreen -> ClientSocket: emit send_message
+ClientSocket -> ServerSocket: WebSocket message
+
+ServerSocket -> MessageService: sendMessage(data)
+MessageService -> MessageModel: create(message)
+MessageModel -> DB: INSERT INTO messages
+DB -> MessageModel: Message record with ID
+
+MessageModel -> MessageService: Message object
+MessageService -> Emitter: emit message_received
+Emitter -> ClientSocket: Send to recipients
+
+ClientSocket -> ChatContext: Sender confirmation
+ChatContext -> ChatScreen: Add message to list
+ChatScreen -> ChatScreen: Re-render
+
+Emitter -> ReceiverScreen: Socket event
+ReceiverScreen -> ChatContext: addMessage(received)
+ChatContext -> ReceiverScreen: Update UI
+
+alt Auto-read after 1 second
+    ReceiverScreen -> ClientSocket: emit message_read
+    ClientSocket -> ServerSocket: Mark as read
+    ServerSocket -> MessageModel: Update read status
+    MessageModel -> DB: UPDATE messages SET read
+    Emitter -> ChatScreen: Broadcast message_read
+    ChatScreen -> ChatScreen: Show read receipt
+end
+
+@enduml

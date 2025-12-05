@@ -1,0 +1,92 @@
+@startuml C4_Level3_Component_Backend
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+
+[Client Apps]
+
+package "EXPRESS.JS API SERVER" {
+    package "MIDDLEWARE LAYER" {
+        [CORS Middleware]
+        [JWT Auth Middleware]
+        [Error Handler]
+        [Body Parser]
+    }
+    
+    package "ROUTING LAYER" {
+        [Auth Routes]
+        [Property Routes]
+        [Booking Routes]
+        [Message Routes]
+        [Favorites Routes]
+    }
+    
+    package "BUSINESS LOGIC LAYER" {
+        [User Service]
+        [Property Service]
+        [Booking Service]
+        [Message Service]
+        [Favorites Service]
+    }
+    
+    package "DATA ACCESS LAYER" {
+        [User Model]
+        [Property Model]
+        [Booking Model]
+        [Message Model]
+        [Favorite Model]
+        [PropertyImage Model]
+    }
+}
+
+package "SOCKET.IO SERVER" {
+    [Connection Manager]
+    [Chat Events Handler]
+    [Typing Status Handler]
+    [Online Status Handler]
+}
+
+package "DATABASE & STORAGE" {
+    database "PostgreSQL" as DB
+    folder "File Storage" as Storage
+}
+
+[Client Apps] --> [CORS Middleware]
+[CORS Middleware] --> [JWT Auth Middleware]
+[JWT Auth Middleware] --> [Body Parser]
+
+[Body Parser] --> [Auth Routes]
+[Body Parser] --> [Property Routes]
+[Body Parser] --> [Booking Routes]
+[Body Parser] --> [Message Routes]
+[Body Parser] --> [Favorites Routes]
+
+[Auth Routes] --> [User Service]
+[Property Routes] --> [Property Service]
+[Booking Routes] --> [Booking Service]
+[Message Routes] --> [Message Service]
+[Favorites Routes] --> [Favorites Service]
+
+[User Service] --> [User Model]
+[Property Service] --> [Property Model]
+[Booking Service] --> [Booking Model]
+[Message Service] --> [Message Model]
+[Favorites Service] --> [Favorite Model]
+[Property Service] --> [PropertyImage Model]
+
+[User Model] --> DB
+[Property Model] --> DB
+[Booking Model] --> DB
+[Message Model] --> DB
+[Favorite Model] --> DB
+[PropertyImage Model] --> DB
+[PropertyImage Model] --> Storage
+
+[Message Service] --> [Connection Manager]
+[Chat Events Handler] --> DB
+[Typing Status Handler] --> [Connection Manager]
+[Online Status Handler] --> [Connection Manager]
+
+[Error Handler] -.-> [Client Apps]
+
+@enduml

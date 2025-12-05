@@ -43,7 +43,7 @@ const User = sequelize.define('User',{
 
 
 }, {
-  schema: "auth",
+  schema: "ikri",
   tableName: "utilisateur"
 });
 

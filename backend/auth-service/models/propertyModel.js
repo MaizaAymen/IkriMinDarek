@@ -150,6 +150,22 @@ const Property = sequelize.define('Property', {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     },
+    statut_approbation: {
+        type: DataTypes.ENUM('en_attente', 'approuvee', 'rejetee'),
+        defaultValue: 'en_attente'
+    },
+    raison_rejet: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    date_approbation: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    admin_approuve_par: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     
     // Informations supplémentaires
     regles_location: {
@@ -183,7 +199,7 @@ const Property = sequelize.define('Property', {
         defaultValue: 0
     }
 }, {
-    schema: "rental",
+    schema: "ikri",
     tableName: "properties",
     timestamps: true
 });

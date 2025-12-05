@@ -9,7 +9,6 @@ const Booking = sequelize.define('Booking', {
         primaryKey: true,
         autoIncrement: true
     },
-    
     // Dates
     date_debut: {
         type: DataTypes.DATE,
@@ -26,8 +25,14 @@ const Booking = sequelize.define('Booking', {
     
     // Statut de la réservation
     statut: {
-        type: DataTypes.ENUM('en_attente', 'confirmee', 'refusee', 'active', 'terminee', 'annulee'),
+        type: DataTypes.ENUM('en_attente', 'confirmee', 'refusee', 'active', 'terminee', 'annulea'),
         defaultValue: 'en_attente'
+    },
+    
+    // Motif de refus (si refusée)
+    motif_refus: {
+        type: DataTypes.TEXT,
+        allowNull: true
     },
     
     // Prix et paiement
@@ -120,7 +125,7 @@ const Booking = sequelize.define('Booking', {
         allowNull: true
     }
 }, {
-    schema: "rental",
+    schema: "ikri",
     tableName: "bookings",
     timestamps: true
 });
@@ -137,6 +142,11 @@ Booking.belongsTo(User, {
 });
 
 Booking.belongsTo(User, {
+    foreignKey: 'proprietaire_id',
+    as: 'proprietaire'
+});
+
+Booking.belongsTo(User, {
     foreignKey: 'agent_id',
     as: 'agent',
     allowNull: true
@@ -150,6 +160,11 @@ Property.hasMany(Booking, {
 User.hasMany(Booking, {
     foreignKey: 'locataire_id',
     as: 'locations_locataire'
+});
+
+User.hasMany(Booking, {
+    foreignKey: 'proprietaire_id',
+    as: 'bookings_proprietaire'
 });
 
 User.hasMany(Booking, {

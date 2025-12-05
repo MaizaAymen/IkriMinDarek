@@ -1,0 +1,76 @@
+@startuml C4_Level3_Component_Frontend
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+
+package "REACT NATIVE APPLICATION" {
+    
+    package "CONTEXT & STATE MANAGEMENT" {
+        [AuthContext]
+        [PropertyContext]
+        [BookingContext]
+        [ChatContext]
+    }
+    
+    package "SCREEN COMPONENTS" {
+        [Auth Screens]
+        [Property Screens]
+        [Booking Screens]
+        [Chat Screens]
+        [Profile Screens]
+    }
+    
+    package "UTILITY COMPONENTS" {
+        [Buttons & Input Fields]
+        [Cards & Modals]
+        [Loading & Error States]
+    }
+    
+    package "SERVICE LAYER" {
+        [authAPI]
+        [propertiesAPI]
+        [bookingsAPI]
+        [messagesAPI]
+    }
+    
+    package "STORAGE & NAVIGATION" {
+        [SecureStore]
+        [Expo Router]
+    }
+}
+
+package "EXTERNAL" {
+    [Google Maps Integration]
+    [Image Picker]
+}
+
+[AuthContext] --> [Auth Screens]
+[PropertyContext] --> [Property Screens]
+[BookingContext] --> [Booking Screens]
+[ChatContext] --> [Chat Screens]
+[AuthContext] --> [Profile Screens]
+
+[Auth Screens] --> [Buttons & Input Fields]
+[Property Screens] --> [Cards & Modals]
+[Booking Screens] --> [Buttons & Input Fields]
+[Chat Screens] --> [Loading & Error States]
+[Profile Screens] --> [Buttons & Input Fields]
+
+[Auth Screens] --> [authAPI]
+[Property Screens] --> [propertiesAPI]
+[Booking Screens] --> [bookingsAPI]
+[Chat Screens] --> [messagesAPI]
+
+[authAPI] --> [SecureStore]
+[AuthContext] --> [SecureStore]
+
+[Auth Screens] --> [Expo Router]
+[Property Screens] --> [Expo Router]
+[Booking Screens] --> [Expo Router]
+[Chat Screens] --> [Expo Router]
+[Profile Screens] --> [Expo Router]
+
+[Property Screens] --> [Google Maps Integration]
+[Auth Screens] --> [Image Picker]
+
+@enduml
